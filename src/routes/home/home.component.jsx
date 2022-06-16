@@ -29,7 +29,9 @@ const Home = () => {
     }
   ];
 
-  return <CategoryMenu categories={categories} />;
+  return (
+    <CategoryMenu categories={categories}/>
+  );
 };
 
 export default Home;
