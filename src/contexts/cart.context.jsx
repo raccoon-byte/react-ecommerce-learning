@@ -1,5 +1,9 @@
 import { createContext, useEffect, useState } from "react";
 
+const clearCartItem = (cartItems, itemToClear) => {
+  return cartItems.filter((cartItem) => cartItem.id !== itemToClear.id);
+}
+
 const addCartItem = (cartItems, productToAdd) => {
   const existingCartItem = cartItems.find(
     (cartItem) => cartItem.id === productToAdd.id
@@ -22,9 +26,7 @@ const removeCartItem = (cartItems, productToRemove) => {
   const newQuantity = productToRemove.quantity - 1;
 
   if (newQuantity < 1) {
-    return cartItems.filter((cartItem) =>
-      (cartItem.id !== productToRemove.id)
-    );
+    return clearCartItem(cartItems, productToRemove);
   }
 
   return cartItems.map((cartItem) =>
@@ -40,18 +42,31 @@ export const CartContext = createContext({
   cartItems: [],
   addItemToCart: () => {},
   removeItemFromCart: () => {},
+  clearItemFromCart: () => {},
   cartCount: 0,
-  setCartCount: () => {},
+  cartTotal: 0
 });
 
 export const CartProvider = ({ children }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
   const [cartCount, setCartCount] = useState(0);
+  const [cartTotal, setCartTotal] = useState(0);
 
   useEffect(() => {
-    const newCartCount = cartItems.reduce((total, cartItem) => total + cartItem.quantity, 0)
+    const newCartCount = cartItems.reduce(
+      (total, cartItem) => total + cartItem.quantity,
+      0
+    );
     setCartCount(newCartCount);
+  }, [cartItems]);
+
+  useEffect(() => {
+    const newCartTotal = cartItems.reduce(
+      (cartTotal, cartItem) => cartTotal + cartItem.quantity * cartItem.price,
+      0
+    );
+    setCartTotal(newCartTotal);
   }, [cartItems]);
 
   const addItemToCart = (productToAdd) => {
@@ -62,7 +77,20 @@ export const CartProvider = ({ children }) => {
     setCartItems(removeCartItem(cartItems, productToRemove));
   }
 
-  const value = { isCartOpen, setIsCartOpen, addItemToCart, removeItemFromCart, cartItems, cartCount };
+  const clearItemFromCart = (itemToClear) => {
+    setCartItems(clearCartItem(cartItems, itemToClear));
+  }
+
+  const value = {
+    isCartOpen,
+    setIsCartOpen,
+    addItemToCart,
+    removeItemFromCart,
+    clearItemFromCart,
+    cartItems,
+    cartCount,
+    cartTotal,
+  };
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }
