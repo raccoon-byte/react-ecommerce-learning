@@ -6,9 +6,11 @@ import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
 } from 'firebase/auth';
-import { getFirestore, doc, getDoc, setDoc, } from 'firebase/firestore';
+import {
+  getFirestore, doc, getDoc, setDoc, collection, writeBatch,
+} from 'firebase/firestore';
 
 // The web app's Firebase configuration
 const firebaseConfig = {
@@ -21,6 +23,7 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
+// eslint-disable-next-line
 const firebaseApp = initializeApp(firebaseConfig);
 
 const googleProvider = new GoogleAuthProvider();
@@ -32,6 +35,19 @@ export const auth = getAuth();
 export const signInWithGooglePopup = () => signInWithPopup(auth, googleProvider);
 
 export const db = getFirestore();
+
+export const addCollectionAndDocuments = async (collectionKey, objectsToAdd) => {
+  const collectionRef = collection(db, collectionKey);
+  const batch = writeBatch(db);
+
+  objectsToAdd.forEach((object) => {
+    const docRef = doc(collectionRef, object.title.toLowerCase());
+    batch.set(docRef, object);
+  });
+
+  await batch.commit();
+  console.log('done');
+}
 
 export const createUserDocumentFromAuth = async (userAuth, additionalInfo = {}) => {
   if (!userAuth) return;
@@ -46,10 +62,7 @@ export const createUserDocumentFromAuth = async (userAuth, additionalInfo = {}) 
 
     try {
       await setDoc(userDocRef, {
-        displayName,
-        email,
-        createdAt,
-        ...additionalInfo,
+        displayName, email, createdAt, ...additionalInfo,
       });
     } catch (error) {
       console.log('error while creating the user in db', error.message);
